@@ -1,3 +1,13 @@
+# Chặn môi trường ảo của Python 
 .venv/
+venv/
 .agents/
-README/
+
+# Chặn bộ nhớ đệm tự sinh của Python khi chạy code
+**/__pycache__/
+*.pyc
+
+# Chặn các file test dữ liệu 
+*.pdf
+*.docx
+*.txt
