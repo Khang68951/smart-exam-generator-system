@@ -35,6 +35,7 @@ export default function Home() {
   const [appState, setAppState] = useState<AppState>("upload");
   const [selectedDoc, setSelectedDoc] = useState<MockDocument | null>(null);
   const [customFile, setCustomFile] = useState<{ name: string; size: string } | null>(null);
+  const [customFileObject, setCustomFileObject] = useState<File | null>(null);
   
   // Configuration State
   const [config, setConfig] = useState<ExamConfig>({
@@ -93,99 +94,154 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (file) {
       setCustomFile({ name: file.name, size: `${(file.size / 1024 / 1024).toFixed(2)} MB` });
-      // Build a mock document based on the uploaded file name
-      const customDoc: MockDocument = {
+      setCustomFileObject(file);
+      // Build a placeholder document based on the uploaded file name
+      const placeholderDoc: MockDocument = {
         id: "custom-doc",
         title: file.name.replace(/\.[^/.]+$/, ""),
-        description: `Custom uploaded file analyzed for examination generation.`,
+        description: `Custom uploaded file to be analyzed by the FastAPI backend.`,
         fileName: file.name,
         fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        paragraphs: [
-          {
-            id: "P1",
-            text: "This is the first segment of your uploaded document. The SEGS NLP processor has chunked and indexed this paragraph. All questions generated under this scope are strictly locked to these characters to ensure zero hallucinations."
-          },
-          {
-            id: "P2",
-            text: "Important parameters, experimental constants, or pedagogical objectives should be clearly stated in this section. The model utilizes strict context-bounding to map multiple-choice options directly to this evidence string."
-          },
-          {
-            id: "P3",
-            text: "To review compliance, educators can flag sections or edit generated templates. When exporting, paragraph citations (e.g. [P1]) are preserved in Markdown and JSON formats to support cross-referencing."
-          }
-        ],
-        questions: [
-          {
-            id: "cq1",
-            type: "multiple-choice",
-            questionText: "What does the SEGS NLP processor do with paragraph segments in an uploaded document?",
-            options: [
-              "It deletes them to save server memory space",
-              "It chunks and indexes them, locking generated questions to this context",
-              "It translates them into five random foreign languages",
-              "It posts them to public discussion boards for ranking"
-            ],
-            correctAnswer: "It chunks and indexes them, locking generated questions to this context",
-            citation: "P1",
-            explanation: "Paragraph [P1] notes that 'The SEGS NLP processor has chunked and indexed this paragraph. All questions generated under this scope are strictly locked to these characters...'",
-            curriculumAligned: true
-          },
-          {
-            id: "cq2",
-            type: "fill-in-the-blank",
-            questionText: "Paragraph citations are preserved in ________ and JSON formats to support cross-referencing.",
-            correctAnswer: "Markdown",
-            citation: "P3",
-            explanation: "Paragraph [P3] states: 'When exporting, paragraph citations (e.g. [P1]) are preserved in Markdown and JSON formats...'",
-            curriculumAligned: true
-          },
-          {
-            id: "cq3",
-            type: "short-answer",
-            questionText: "How do educators review question compliance in the uploaded document?",
-            correctAnswer: "By flagging sections or editing generated templates",
-            citation: "P3",
-            explanation: "Paragraph [P3] states: 'To review compliance, educators can flag sections or edit generated templates.'",
-            curriculumAligned: true
-          },
-          {
-            id: "cq4",
-            type: "multiple-choice",
-            questionText: "What is the primary capital city of Australia, and what is its exact population?",
-            options: [
-              "Canberra, with approximately 430,000 residents",
-              "Sydney, with over 5 million residents",
-              "Melbourne, with 4.8 million residents",
-              "Brisbane, with 2.5 million residents"
-            ],
-            correctAnswer: "Canberra, with approximately 430,000 residents",
-            citation: "P1",
-            explanation: "WARNING: This question references Australian geography which is completely out-of-scope for the uploaded text. It represents a hallucination model leakage.",
-            outOfBounds: true,
-            curriculumAligned: false
-          }
-        ]
+        paragraphs: [],
+        questions: []
       };
-      setSelectedDoc(customDoc);
-      setQuestions(JSON.parse(JSON.stringify(customDoc.questions)));
+      setSelectedDoc(placeholderDoc);
       setAppState("config");
     }
   };
 
-  const handleStartAnalysis = () => {
+  const handleStartAnalysis = async () => {
     setAppState("analyzing");
     setAnalysisProgress(0);
     setAnalysisStep(0);
-    setAnalysisLogs([
-      "[SYSTEM] Initializing Gemma 2B Grounded Execution Environment...",
-      `[SYSTEM] Source: ${selectedDoc?.fileName || "custom_uploaded_file"}`,
-      `[SYSTEM] Scope Constraints: Restricted to ${selectedDoc?.paragraphs.length} paragraphs.`
-    ]);
+
+    if (selectedDoc?.id === "custom-doc" && customFileObject) {
+      setAnalysisLogs([
+        "[SYSTEM] Contacting FastAPI backend at http://localhost:8000...",
+        `[SYSTEM] Source: ${customFileObject.name} (${(customFileObject.size / 1024).toFixed(1)} KB)`,
+        "[SYSTEM] Uploading file bytes to backend..."
+      ]);
+
+      // Slowly increment progress to 90% while waiting for API response
+      const progressInterval = setInterval(() => {
+        setAnalysisProgress((prev) => {
+          if (prev < 90) return prev + 5;
+          return prev;
+        });
+      }, 150);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", customFileObject);
+
+        const response = await fetch(`http://localhost:8000/upload-document/?question_count=${config.questionCount}`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server returned error status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        clearInterval(progressInterval);
+        setAnalysisProgress(100);
+        setAnalysisStep(analysisSteps.length - 1);
+        setAnalysisLogs((prev) => [
+          ...prev,
+          "[OK] Bytes received and parsed.",
+          `[SYSTEM] Parsed ${data.total_characters} characters, split into ${data.total_chunks_created} chunks.`,
+          `[SYSTEM] Generated ${data.questions.length} questions from context.`,
+          "[SYSTEM] Running strict grounding validation...",
+          "[OK] Analysis complete! Loading workspace..."
+        ]);
+
+        // Construct the custom MockDocument with backend data
+        const updatedDoc: MockDocument = {
+          id: "custom-doc",
+          title: customFileObject.name.replace(/\.[^/.]+$/, ""),
+          description: `Custom file processed dynamically by SEGS backend.`,
+          fileName: customFileObject.name,
+          fileSize: `${(customFileObject.size / 1024 / 1024).toFixed(2)} MB`,
+          paragraphs: data.chunks.map((text: string, idx: number) => ({
+            id: `P${idx + 1}`,
+            text: text
+          })),
+          questions: data.questions
+        };
+
+        setTimeout(() => {
+          setSelectedDoc(updatedDoc);
+
+          // Apply client-side filters
+          let filtered = [...updatedDoc.questions];
+          filtered = filtered.filter(q => {
+            if (q.type === "multiple-choice" && !config.types.multipleChoice) return false;
+            if (q.type === "short-answer" && !config.types.shortAnswer) return false;
+            if (q.type === "fill-in-the-blank" && !config.types.fillInTheBlank) return false;
+            return true;
+          });
+
+          setQuestions(filtered);
+          setAppState("workspace");
+          setQuizStatus("taking");
+          setStudentAnswers({});
+        }, 1500);
+
+      } catch (err: any) {
+        clearInterval(progressInterval);
+        setAnalysisLogs((prev) => [
+          ...prev,
+          `[ERROR] Failed to connect to FastAPI backend: ${err.message}`,
+          "[SYSTEM] Please check if the FastAPI backend is running on http://localhost:8000"
+        ]);
+        setTimeout(() => {
+          alert(`Connection Error: ${err.message}. Make sure backend is running.`);
+          setAppState("config");
+        }, 3000);
+      }
+    } else {
+      // Default simulated flow for preset mock documents
+      setAnalysisLogs([
+        "[SYSTEM] Initializing Gemma 2B Grounded Execution Environment...",
+        `[SYSTEM] Source: ${selectedDoc?.fileName || "default_document"}`,
+        `[SYSTEM] Scope Constraints: Restricted to ${selectedDoc?.paragraphs.length} paragraphs.`
+      ]);
+
+      const interval = setInterval(() => {
+        setAnalysisProgress((prev) => {
+          const next = prev + 4;
+          if (next >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+              if (selectedDoc) {
+                let filtered = [...selectedDoc.questions];
+                filtered = filtered.filter(q => {
+                  if (q.type === "multiple-choice" && !config.types.multipleChoice) return false;
+                  if (q.type === "short-answer" && !config.types.shortAnswer) return false;
+                  if (q.type === "fill-in-the-blank" && !config.types.fillInTheBlank) return false;
+                  return true;
+                });
+                const count = Math.min(config.questionCount, filtered.length);
+                setQuestions(filtered.slice(0, count));
+              }
+              setAppState("workspace");
+              setQuizStatus("taking");
+              setStudentAnswers({});
+            }, 600);
+            return 100;
+          }
+          return next;
+        });
+      }, 120);
+    }
   };
 
-  // Simulation of Grounded AI generation
+  // Simulation of Grounded AI generation (skip if custom-doc)
   useEffect(() => {
     if (appState !== "analyzing") return;
+    if (selectedDoc?.id === "custom-doc") return;
 
     const interval = setInterval(() => {
       setAnalysisProgress((prev) => {
@@ -193,11 +249,8 @@ export default function Home() {
         if (next >= 100) {
           clearInterval(interval);
           setTimeout(() => {
-            // Filter questions based on configuration constraints
             if (selectedDoc) {
               let filtered = [...selectedDoc.questions];
-              
-              // Filter types
               filtered = filtered.filter(q => {
                 if (q.type === "multiple-choice" && !config.types.multipleChoice) return false;
                 if (q.type === "short-answer" && !config.types.shortAnswer) return false;
@@ -205,7 +258,6 @@ export default function Home() {
                 return true;
               });
 
-              // Slice according to count (allow one extra if out-of-bounds is present to demonstrate)
               const count = Math.min(config.questionCount, filtered.length);
               setQuestions(filtered.slice(0, count));
             }
@@ -222,9 +274,10 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [appState, selectedDoc, config]);
 
-  // Handle updates to step indicator and log generation
+  // Handle updates to step indicator and log generation (skip if custom-doc)
   useEffect(() => {
     if (appState !== "analyzing") return;
+    if (selectedDoc?.id === "custom-doc") return;
 
     const stepIndex = Math.min(
       Math.floor((analysisProgress / 100) * analysisSteps.length),
