@@ -1,3 +1,5 @@
 .venv/
 .agents/
 README/
+frontend/node_modules/
+frontend/.next/

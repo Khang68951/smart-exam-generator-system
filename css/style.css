@@ -1,7 +1,0 @@
-/* SEGS - Strict Context-Bounding Exam Generation System */
-/* Main Design System Stylesheet Manifest */
-
-@import url('base.css');
-@import url('layout.css');
-@import url('components.css');
-@import url('animations.css');
