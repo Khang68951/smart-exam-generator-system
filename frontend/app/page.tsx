@@ -1,27 +1,27 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { 
-  UploadCloud, 
-  FileText, 
-  Settings, 
-  Brain, 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  ChevronRight, 
-  ArrowRight, 
-  Lock, 
-  Edit3, 
-  Trash2, 
-  Eye, 
-  BookOpen, 
-  Download, 
-  Sparkles, 
-  RefreshCw, 
-  Play, 
-  Check, 
-  HelpCircle, 
+import {
+  UploadCloud,
+  FileText,
+  Settings,
+  Brain,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ChevronRight,
+  ArrowRight,
+  Lock,
+  Edit3,
+  Trash2,
+  Eye,
+  BookOpen,
+  Download,
+  Sparkles,
+  RefreshCw,
+  Play,
+  Check,
+  HelpCircle,
   FileCode,
   FileCheck,
   User,
@@ -36,7 +36,7 @@ export default function Home() {
   const [selectedDoc, setSelectedDoc] = useState<MockDocument | null>(null);
   const [customFile, setCustomFile] = useState<{ name: string; size: string } | null>(null);
   const [customFileObject, setCustomFileObject] = useState<File | null>(null);
-  
+
   // Configuration State
   const [config, setConfig] = useState<ExamConfig>({
     questionCount: 5,
@@ -60,12 +60,12 @@ export default function Home() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [activeParagraphId, setActiveParagraphId] = useState<string | null>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
-  
+
   // Student State
   const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
   const [quizStatus, setQuizStatus] = useState<QuizStatus>("idle");
   const [studentScore, setStudentScore] = useState<number>(0);
-  
+
   // Educator State
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Question | null>(null);
@@ -311,7 +311,7 @@ export default function Home() {
   // --- Scroll & Highlight Citation ---
   const handleScrollToCitation = (citationId: string) => {
     setActiveParagraphId(citationId);
-    
+
     // Find the paragraph element inside the scrollable left panel
     const element = document.getElementById(`doc-para-${citationId}`);
     if (element && leftPanelRef.current) {
@@ -334,7 +334,7 @@ export default function Home() {
     questions.forEach((q) => {
       const studentAns = (studentAnswers[q.id] || "").trim().toLowerCase();
       const correctAns = q.correctAnswer.trim().toLowerCase();
-      
+
       if (q.type === "multiple-choice") {
         if (studentAns === correctAns) score++;
       } else if (q.type === "fill-in-the-blank") {
@@ -343,7 +343,7 @@ export default function Home() {
         // Short answer simple heuristic match
         const keywords = correctAns.split(" ");
         const matched = keywords.filter(word => word.length > 3 && studentAns.includes(word));
-        if (matched.length >= Math.min(2, keywords.length)) {
+        if (matched.length >= Math.min(2, 10)) {
           score++;
         }
       }
@@ -433,7 +433,7 @@ export default function Home() {
     const compliant = questions.filter(q => !q.outOfBounds).length;
     const hallucinations = total - compliant;
     const alignmentRate = total > 0 ? Math.round((compliant / total) * 100) : 100;
-    
+
     return { total, compliant, hallucinations, alignmentRate };
   }, [questions]);
 
@@ -460,22 +460,20 @@ export default function Home() {
             <div className="bg-gray-950/80 p-0.5 border border-white/5 rounded-lg flex">
               <button
                 onClick={() => { setActiveRole("student"); setEditingQuestionId(null); }}
-                className={`flex items-center space-x-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-all active:scale-98 ${
-                  activeRole === "student"
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "text-text-secondary hover:text-text-primary"
-                }`}
+                className={`flex items-center space-x-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-all active:scale-98 ${activeRole === "student"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "text-text-secondary hover:text-text-primary"
+                  }`}
               >
                 <GraduationCap className="h-3.5 w-3.5" />
                 <span>Student View</span>
               </button>
               <button
                 onClick={() => setActiveRole("educator")}
-                className={`flex items-center space-x-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-all active:scale-98 ${
-                  activeRole === "educator"
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "text-text-secondary hover:text-text-primary"
-                }`}
+                className={`flex items-center space-x-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-all active:scale-98 ${activeRole === "educator"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "text-text-secondary hover:text-text-primary"
+                  }`}
               >
                 <User className="h-3.5 w-3.5" />
                 <span>Educator Audit</span>
@@ -495,7 +493,7 @@ export default function Home() {
 
       {/* VIEW STATES */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-8 max-w-7xl w-full mx-auto">
-        
+
         {/* STATE 1: UPLOAD & SOURCE SELECT */}
         {appState === "upload" && (
           <div className="w-full max-w-4xl space-y-8 py-8">
@@ -556,7 +554,7 @@ export default function Home() {
                         {doc.description}
                       </p>
                     </div>
-                    
+
                     <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
                       <span className="text-[10px] text-text-muted font-mono uppercase">
                         {doc.paragraphs.length} Paragraph Contexts
@@ -587,7 +585,7 @@ export default function Home() {
             </div>
 
             <div className="border border-white/5 bg-[#111827]/70 rounded-xl p-6 space-y-6">
-              
+
               {/* Question Count Slider */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -614,11 +612,10 @@ export default function Home() {
               <div className="space-y-3">
                 <label className="text-sm font-semibold text-white block">Question Formats</label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <label className={`flex items-center justify-between border rounded-xl p-3.5 cursor-pointer transition-all active:scale-98 ${
-                    config.types.multipleChoice 
-                      ? "border-indigo-500/50 bg-indigo-950/20 text-white" 
-                      : "border-white/5 bg-gray-950/40 text-text-secondary hover:border-white/10"
-                  }`}>
+                  <label className={`flex items-center justify-between border rounded-xl p-3.5 cursor-pointer transition-all active:scale-98 ${config.types.multipleChoice
+                    ? "border-indigo-500/50 bg-indigo-950/20 text-white"
+                    : "border-white/5 bg-gray-950/40 text-text-secondary hover:border-white/10"
+                    }`}>
                     <span className="text-xs font-medium">Multiple Choice</span>
                     <input
                       type="checkbox"
@@ -631,11 +628,10 @@ export default function Home() {
                     />
                   </label>
 
-                  <label className={`flex items-center justify-between border rounded-xl p-3.5 cursor-pointer transition-all active:scale-98 ${
-                    config.types.fillInTheBlank 
-                      ? "border-indigo-500/50 bg-indigo-950/20 text-white" 
-                      : "border-white/5 bg-gray-950/40 text-text-secondary hover:border-white/10"
-                  }`}>
+                  <label className={`flex items-center justify-between border rounded-xl p-3.5 cursor-pointer transition-all active:scale-98 ${config.types.fillInTheBlank
+                    ? "border-indigo-500/50 bg-indigo-950/20 text-white"
+                    : "border-white/5 bg-gray-950/40 text-text-secondary hover:border-white/10"
+                    }`}>
                     <span className="text-xs font-medium">Fill in the Blank</span>
                     <input
                       type="checkbox"
@@ -648,11 +644,10 @@ export default function Home() {
                     />
                   </label>
 
-                  <label className={`flex items-center justify-between border rounded-xl p-3.5 cursor-pointer transition-all active:scale-98 ${
-                    config.types.shortAnswer 
-                      ? "border-indigo-500/50 bg-indigo-950/20 text-white" 
-                      : "border-white/5 bg-gray-950/40 text-text-secondary hover:border-white/10"
-                  }`}>
+                  <label className={`flex items-center justify-between border rounded-xl p-3.5 cursor-pointer transition-all active:scale-98 ${config.types.shortAnswer
+                    ? "border-indigo-500/50 bg-indigo-950/20 text-white"
+                    : "border-white/5 bg-gray-950/40 text-text-secondary hover:border-white/10"
+                    }`}>
                     <span className="text-xs font-medium">Short Answer</span>
                     <input
                       type="checkbox"
@@ -675,15 +670,14 @@ export default function Home() {
                     <Lock className="h-3 w-3 mr-1" /> Grounded AI Mode
                   </span>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <div 
+                  <div
                     onClick={() => setConfig({ ...config, strictness: "absolute-grounded" })}
-                    className={`border p-4 rounded-xl cursor-pointer transition-all active:scale-98 ${
-                      config.strictness === "absolute-grounded"
-                        ? "border-indigo-500 bg-indigo-950/20"
-                        : "border-white/5 bg-gray-950/40 hover:border-white/10"
-                    }`}
+                    className={`border p-4 rounded-xl cursor-pointer transition-all active:scale-98 ${config.strictness === "absolute-grounded"
+                      ? "border-indigo-500 bg-indigo-950/20"
+                      : "border-white/5 bg-gray-950/40 hover:border-white/10"
+                      }`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs font-bold text-white flex items-center">
@@ -696,13 +690,12 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div 
+                  <div
                     onClick={() => setConfig({ ...config, strictness: "high-rigor" })}
-                    className={`border p-4 rounded-xl cursor-pointer transition-all active:scale-98 ${
-                      config.strictness === "high-rigor"
-                        ? "border-indigo-500 bg-indigo-950/20"
-                        : "border-white/5 bg-gray-950/40 hover:border-white/10"
-                    }`}
+                    className={`border p-4 rounded-xl cursor-pointer transition-all active:scale-98 ${config.strictness === "high-rigor"
+                      ? "border-indigo-500 bg-indigo-950/20"
+                      : "border-white/5 bg-gray-950/40 hover:border-white/10"
+                      }`}
                   >
                     <span className="text-xs font-bold text-white block mb-1">
                       High Rigor Context (Semantics Match)
@@ -753,8 +746,8 @@ export default function Home() {
             {/* Terminal Monitor */}
             <div className="border border-white/10 bg-gray-950 rounded-xl p-5 font-mono text-[11px] text-indigo-300 space-y-3 shadow-inner relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-indigo-900/30">
-                <div 
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-100" 
+                <div
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-100"
                   style={{ width: `${analysisProgress}%` }}
                 ></div>
               </div>
@@ -779,9 +772,8 @@ export default function Home() {
                 const isDone = analysisStep > idx;
                 const isActive = analysisStep === idx;
                 return (
-                  <div key={idx} className={`flex items-start space-x-3 transition-colors ${
-                    isDone ? "text-emerald-400" : isActive ? "text-white" : "text-text-muted"
-                  }`}>
+                  <div key={idx} className={`flex items-start space-x-3 transition-colors ${isDone ? "text-emerald-400" : isActive ? "text-white" : "text-text-muted"
+                    }`}>
                     <div className="mt-0.5">
                       {isDone ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-400" />
@@ -805,7 +797,7 @@ export default function Home() {
         {/* STATE 4: WORKSPACE (SPLIT PANE VIEW) */}
         {appState === "workspace" && selectedDoc && (
           <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch min-h-[75vh]">
-            
+
             {/* LEFT PANE: GROUNDED DOCUMENT VIEWER (5 Cols) */}
             <div className="lg:col-span-5 flex flex-col bg-gray-950/80 border border-white/5 rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
@@ -824,7 +816,7 @@ export default function Home() {
               </div>
 
               {/* Paragraphs body */}
-              <div 
+              <div
                 ref={leftPanelRef}
                 className="flex-1 overflow-y-auto space-y-3 pr-2 max-h-[60vh] select-text"
               >
@@ -835,17 +827,15 @@ export default function Home() {
                       key={p.id}
                       id={`doc-para-${p.id}`}
                       onClick={() => setActiveParagraphId(p.id)}
-                      className={`border p-4 rounded-xl transition-all cursor-pointer relative ${
-                        isActive
-                          ? "border-indigo-500 bg-indigo-950/20 shadow-md shadow-indigo-500/5"
-                          : "border-white/5 bg-gray-900/40 hover:border-white/10"
-                      }`}
+                      className={`border p-4 rounded-xl transition-all cursor-pointer relative ${isActive
+                        ? "border-indigo-500 bg-indigo-950/20 shadow-md shadow-indigo-500/5"
+                        : "border-white/5 bg-gray-900/40 hover:border-white/10"
+                        }`}
                     >
-                      <span className={`absolute top-3 left-3 text-[10px] font-bold font-mono px-2 py-0.5 rounded ${
-                        isActive 
-                          ? "bg-indigo-600 text-white" 
-                          : "bg-gray-950 border border-white/5 text-text-secondary"
-                      }`}>
+                      <span className={`absolute top-3 left-3 text-[10px] font-bold font-mono px-2 py-0.5 rounded ${isActive
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-950 border border-white/5 text-text-secondary"
+                        }`}>
                         {p.id}
                       </span>
                       <p className="text-xs text-text-secondary leading-relaxed pl-12 pt-0.5">
@@ -859,11 +849,11 @@ export default function Home() {
 
             {/* RIGHT PANE: EXAM QUIZ WORKSPACE / EDUCATOR AUDIT (7 Cols) */}
             <div className="lg:col-span-7 flex flex-col bg-[#111827]/50 border border-white/5 rounded-xl p-5 space-y-4 relative">
-              
+
               {/* STUDENT VIEW FLOW */}
               {activeRole === "student" && (
                 <div className="flex-1 flex flex-col space-y-4">
-                  
+
                   {/* Quiz Top bar info */}
                   <div className="flex items-center justify-between border-b border-white/5 pb-3">
                     <span className="text-xs font-mono text-text-secondary">
@@ -884,11 +874,11 @@ export default function Home() {
                     {questions.map((q, idx) => {
                       const ans = studentAnswers[q.id] || "";
                       const isGraded = quizStatus === "submitted";
-                      const isCorrect = q.type === "multiple-choice" 
+                      const isCorrect = q.type === "multiple-choice"
                         ? ans.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
                         : q.type === "fill-in-the-blank"
-                        ? ans.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
-                        : ans.length > 5; // Simplified visual pass representation
+                          ? ans.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
+                          : ans.length > 5; // Simplified visual pass representation
 
                       return (
                         <div key={q.id} className="border border-white/5 bg-gray-950/40 rounded-xl p-5 space-y-3">
@@ -896,9 +886,8 @@ export default function Home() {
                             <span className="text-xs font-mono text-text-muted">QUESTION 0{idx + 1}</span>
                             <div className="flex items-center space-x-2">
                               {isGraded && (
-                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase flex items-center ${
-                                  isCorrect ? "bg-emerald-950 text-emerald-300 border border-emerald-900" : "bg-rose-950 text-rose-300 border border-rose-900"
-                                }`}>
+                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase flex items-center ${isCorrect ? "bg-emerald-950 text-emerald-300 border border-emerald-900" : "bg-rose-950 text-rose-300 border border-rose-900"
+                                  }`}>
                                   {isCorrect ? <Check className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
                                   {isCorrect ? "CORRECT" : "INCORRECT"}
                                 </span>
@@ -920,7 +909,7 @@ export default function Home() {
                               {q.options.map((opt, oIdx) => {
                                 const isSelected = ans === opt;
                                 const isCorrectOpt = q.correctAnswer === opt;
-                                
+
                                 let optionBg = "border-white/5 bg-gray-900/30 text-text-secondary hover:border-white/10";
                                 if (isGraded) {
                                   if (isCorrectOpt) {
@@ -956,13 +945,12 @@ export default function Home() {
                                 placeholder="Type the missing word here..."
                                 value={ans}
                                 onChange={(e) => handleStudentAnswerChange(q.id, e.target.value)}
-                                className={`w-full p-3 bg-gray-900/40 border rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500/50 ${
-                                  isGraded 
-                                    ? isCorrect 
-                                      ? "border-emerald-500 bg-emerald-950/10 text-emerald-300"
-                                      : "border-rose-500 bg-rose-950/10 text-rose-300"
-                                    : "border-white/5"
-                                }`}
+                                className={`w-full p-3 bg-gray-900/40 border rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500/50 ${isGraded
+                                  ? isCorrect
+                                    ? "border-emerald-500 bg-emerald-950/10 text-emerald-300"
+                                    : "border-rose-500 bg-rose-950/10 text-rose-300"
+                                  : "border-white/5"
+                                  }`}
                               />
                             </div>
                           )}
@@ -1006,7 +994,7 @@ export default function Home() {
                     <span className="text-xs text-text-muted">
                       {quizStatus === "taking" ? "All questions are strictly cited." : "Practice exam complete."}
                     </span>
-                    
+
                     {quizStatus === "taking" ? (
                       <button
                         onClick={handleSubmitQuiz}
@@ -1030,7 +1018,7 @@ export default function Home() {
               {/* EDUCATOR VIEW FLOW */}
               {activeRole === "educator" && (
                 <div className="flex-1 flex flex-col space-y-4">
-                  
+
                   {/* Assessment stats */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-950/60 p-4 border border-white/5 rounded-xl font-sans">
                     <div className="space-y-1">
@@ -1078,15 +1066,14 @@ export default function Home() {
                   <div className="flex-1 overflow-y-auto pr-2 space-y-4 max-h-[46vh]">
                     {questions.map((q, idx) => {
                       const isEditing = editingQuestionId === q.id;
-                      
+
                       return (
-                        <div 
-                          key={q.id} 
-                          className={`border rounded-xl p-5 space-y-3 transition-colors ${
-                            q.outOfBounds
-                              ? "border-rose-900/50 bg-rose-950/5"
-                              : "border-white/5 bg-gray-950/40"
-                          }`}
+                        <div
+                          key={q.id}
+                          className={`border rounded-xl p-5 space-y-3 transition-colors ${q.outOfBounds
+                            ? "border-rose-900/50 bg-rose-950/5"
+                            : "border-white/5 bg-gray-950/40"
+                            }`}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex items-center space-x-2">
@@ -1095,7 +1082,7 @@ export default function Home() {
                                 {q.type}
                               </span>
                             </div>
-                            
+
                             <div className="flex items-center space-x-2">
                               {q.outOfBounds ? (
                                 <span className="text-[9px] font-mono font-bold bg-rose-950 text-rose-300 border border-rose-900 px-2 py-0.5 rounded">
@@ -1187,7 +1174,7 @@ export default function Home() {
                             // Non-editing Display
                             <div className="space-y-3">
                               <h4 className="text-sm font-bold text-white leading-relaxed">{q.questionText}</h4>
-                              
+
                               {q.options && (
                                 <ul className="list-disc pl-4 space-y-1">
                                   {q.options.map((opt, oIdx) => (
