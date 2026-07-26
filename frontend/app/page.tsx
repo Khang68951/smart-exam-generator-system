@@ -597,14 +597,14 @@ export default function Home() {
                 <input
                   type="range"
                   min="2"
-                  max={selectedDoc.questions.length}
+                  max="40"
                   value={config.questionCount}
                   onChange={(e) => setConfig({ ...config, questionCount: parseInt(e.target.value) })}
                   className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                 />
                 <div className="flex justify-between text-[10px] text-text-muted font-mono">
                   <span>2 Min</span>
-                  <span>{selectedDoc.questions.length} Max</span>
+                  <span>40 Max</span>
                 </div>
               </div>
 

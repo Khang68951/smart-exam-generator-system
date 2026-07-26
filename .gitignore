@@ -7,12 +7,21 @@ venv/
 **/__pycache__/
 *.pyc
 
+# Chặn database SQLite
+*.db
+backend/*.db
+
 # Chặn các file test dữ liệu 
 *.pdf
 *.docx
 *.txt
 
 # Frontend & documentation
-README/
 frontend/node_modules/
 frontend/.next/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
