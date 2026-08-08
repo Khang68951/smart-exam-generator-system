@@ -54,7 +54,13 @@ def format_doc_response(doc: DBDocument):
 
     formatted_questions = []
     for q in sorted(doc.questions, key=lambda x: x.id):
-        options = json.loads(q.options) if q.options else None
+        options = None
+        if q.options:
+            try:
+                options = json.loads(q.options)
+            except Exception:
+                options = []
+
         formatted_questions.append(
             {
                 "id": q.id,

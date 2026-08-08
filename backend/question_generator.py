@@ -11,7 +11,7 @@ def generate_questions_with_gemini(
     difficulty: str = "medium",
     allowed_types: Optional[List[str]] = None,
 ) -> Optional[List[Dict[str, Any]]]:
-    """Generates exam questions strictly grounded in the document text using Gemini AI with JSON response enforcement."""
+    """Generates exam questions strictly grounded in document text using Gemini AI with robust JSON validation."""
     gemini_key = os.getenv("GEMINI_API_KEY")
     model_name = os.getenv("AI_MODEL_NAME", "gemini-2.5-flash")
 
@@ -83,13 +83,61 @@ Return a JSON array of objects adhering strictly to this structure:
         )
 
         raw_text = response.text.strip()
+        # Clean markdown codeblocks if present
+        raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text)
+        raw_text = re.sub(r"\s*```$", "", raw_text)
+
         data = json.loads(raw_text)
 
+        # Handle case where Gemini wraps the result in a root object (e.g., {"questions": [...]})
+        if isinstance(data, dict):
+            for key in ["questions", "data", "items", "results"]:
+                if key in data and isinstance(data[key], list):
+                    data = data[key]
+                    break
+
         if isinstance(data, list) and len(data) > 0:
-            print(
-                f"[AI] Successfully generated {len(data)} questions using Gemini AI ({model_name})"
-            )
-            return data
+            validated_questions: List[Dict[str, Any]] = []
+            for idx, item in enumerate(data, start=1):
+                if not isinstance(item, dict):
+                    continue
+
+                q_text = item.get("questionText") or item.get("question") or ""
+                if not q_text:
+                    continue
+
+                q_type = str(item.get("type", "multiple-choice"))
+                correct_ans = str(item.get("correctAnswer") or item.get("answer") or "")
+                citation = str(item.get("citation") or "P1")
+                explanation = str(item.get("explanation") or "")
+
+                raw_options = item.get("options")
+                options: Optional[List[str]] = None
+                if q_type == "multiple-choice":
+                    if isinstance(raw_options, list):
+                        options = [str(opt) for opt in raw_options]
+                    elif correct_ans:
+                        options = [correct_ans, "Option B", "Option C", "Option D"]
+
+                validated_questions.append(
+                    {
+                        "id": str(item.get("id") or f"gen-q{idx}"),
+                        "type": q_type,
+                        "questionText": q_text,
+                        "options": options,
+                        "correctAnswer": correct_ans,
+                        "citation": citation,
+                        "explanation": explanation,
+                        "curriculumAligned": bool(item.get("curriculumAligned", True)),
+                        "outOfBounds": bool(item.get("outOfBounds", False)),
+                    }
+                )
+
+            if validated_questions:
+                print(
+                    f"[AI] Successfully generated & validated {len(validated_questions)} questions using Gemini AI ({model_name})"
+                )
+                return validated_questions
 
     except Exception as e:
         print(f"[AI] Error calling Gemini AI: {e}. Falling back to rule-based generator.")
@@ -104,7 +152,10 @@ def clean_sentence(sentence: str) -> str:
 
 def split_into_sentences(text: str) -> List[str]:
     """Split text into sentence candidates longer than 30 characters."""
-    sentences = re.split(r"(?<=[.!?])\s+(?=[A-ZÀÁẢÃẠĂẮẮẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ0-9])", text)
+    sentences = re.split(
+        r"(?<=[.!?])\s+(?=[A-ZÀÁẢÃẠĂẮẮẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ0-9])",
+        text,
+    )
     return [clean_sentence(s) for s in sentences if len(clean_sentence(s)) > 30]
 
 
@@ -154,7 +205,6 @@ def generate_questions_from_chunks(
             p_id = f"P{idx + 1}"
             all_extracted_sentences.append((idx, p_id, chunk[:150] + "..."))
 
-    random.seed(42)
     shuffled_sentences = list(all_extracted_sentences)
     random.shuffle(shuffled_sentences)
 
