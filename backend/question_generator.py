@@ -4,6 +4,15 @@ import random
 import re
 from typing import Any, Dict, List, Optional
 
+# Support both package imports and direct module imports regardless of execution entrypoint
+try:
+    from .chunker import split_into_sentences as split_text_into_sentences
+except ImportError:
+    from chunker import split_into_sentences as split_text_into_sentences
+
+# Lines that carry structure rather than prose - unusable as fill-in-the-blank material.
+_STRUCTURAL_LINE = re.compile(r"^\s{0,3}(\||#{1,6}\s|```|~~~|\$\$|\\\[)")
+
 
 def generate_questions_with_gemini(
     chunks: List[str],
@@ -54,6 +63,12 @@ STRICT CONTEXT-BOUNDING & GROUNDING RULES:
 3. Every question MUST include an accurate "citation" field pointing to the exact paragraph code (e.g., "P1", "P2").
 4. Provide an "explanation" field citing the specific sentence from the paragraph that proves the correct answer.
 5. Set "curriculumAligned": true and "outOfBounds": false for all grounded questions.
+
+FORMATTING RULES (the frontend renders Markdown + KaTeX):
+1. Preserve mathematical notation as LaTeX: inline as $...$ and display formulas as $$...$$.
+2. Preserve tabular data as GitHub-flavored Markdown tables, always including the | --- | delimiter row.
+3. Never flatten a formula or a table into prose, and never invent rows or symbols absent from the source.
+4. Escape every backslash correctly so the JSON string stays valid (e.g. "$\\\\frac{{1}}{{2}}mv^2$").
 
 JSON RESPONSE FORMAT:
 Return a JSON array of objects adhering strictly to this structure:
@@ -150,18 +165,53 @@ def clean_sentence(sentence: str) -> str:
     return sentence.strip()
 
 
+def extract_prose_lines(text: str) -> List[str]:
+    """Keep only the prose lines of a chunk, dropping tables, headings and whole code/formula blocks."""
+    prose: List[str] = []
+    in_code = False
+    in_math = False
+
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        if in_code:
+            in_code = not stripped.startswith(("```", "~~~"))
+            continue
+
+        if in_math:
+            in_math = not stripped.endswith(("$$", "\\]"))
+            continue
+
+        if stripped.startswith(("```", "~~~")):
+            in_code = True
+            continue
+
+        if stripped.startswith(("$$", "\\[")):
+            # A one-line display formula opens and closes on the same line.
+            in_math = not (len(stripped) > 2 and stripped.endswith(("$$", "\\]")))
+            continue
+
+        if _STRUCTURAL_LINE.match(line):
+            continue
+
+        prose.append(stripped)
+
+    return prose
+
+
 def split_into_sentences(text: str) -> List[str]:
-    """Split text into sentence candidates longer than 30 characters."""
-    sentences = re.split(
-        r"(?<=[.!?])\s+(?=[A-ZÀÁẢÃẠĂẮẮẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ0-9])",
-        text,
-    )
+    """Split text into prose sentence candidates, skipping tables, code and formula blocks."""
+    sentences = split_text_into_sentences(" ".join(extract_prose_lines(text)))
     return [clean_sentence(s) for s in sentences if len(clean_sentence(s)) > 30]
 
 
 def extract_keywords(sentence: str) -> List[str]:
-    """Extract key non-stopword terms from a given sentence."""
-    words = re.findall(r"\b[a-zA-ZÀ-ỹ0-9]{4,20}\b", sentence)
+    """Extract key non-stopword terms from a sentence, ignoring anything inside math expressions."""
+    # Blanking a token inside $...$ would corrupt the formula, so drop math spans first.
+    prose = re.sub(r"\$[^$\n]+\$|\\\([^\n]*?\\\)", " ", sentence)
+    words = re.findall(r"\b[a-zA-ZÀ-ỹ0-9]{4,20}\b", prose)
     stopwords = {
         "should", "would", "could", "about", "their", "there", "these", "those",
         "which", "where", "under", "after", "before", "while", "during", "through",

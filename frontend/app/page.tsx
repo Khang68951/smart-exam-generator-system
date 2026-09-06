@@ -28,6 +28,7 @@ import {
   GraduationCap
 } from "lucide-react";
 import { mockDocuments } from "./mockData";
+import RichText from "./components/RichText";
 import { Question, SourceParagraph, MockDocument, ExamConfig, AppState, WorkspaceRole, QuizStatus } from "./types";
 
 export default function Home() {
@@ -838,9 +839,9 @@ export default function Home() {
                         }`}>
                         {p.id}
                       </span>
-                      <p className="text-xs text-text-secondary leading-relaxed pl-12 pt-0.5">
+                      <RichText className="text-xs text-text-secondary leading-relaxed pl-12 pt-0.5">
                         {p.text}
-                      </p>
+                      </RichText>
                     </div>
                   );
                 })}
@@ -901,7 +902,9 @@ export default function Home() {
                             </div>
                           </div>
 
-                          <h4 className="text-sm font-bold text-white leading-relaxed">{q.questionText}</h4>
+                          <RichText role="heading" aria-level={4} className="text-sm font-bold text-white leading-relaxed">
+                            {q.questionText}
+                          </RichText>
 
                           {/* Render options for Multiple Choice */}
                           {q.type === "multiple-choice" && q.options && (
@@ -928,7 +931,7 @@ export default function Home() {
                                     onClick={() => handleStudentAnswerChange(q.id, opt)}
                                     className={`w-full text-left p-3 rounded-xl border text-xs transition-all active:scale-98 flex items-center justify-between ${optionBg}`}
                                   >
-                                    <span>{opt}</span>
+                                    <RichText inline>{opt}</RichText>
                                     {!isGraded && isSelected && <Check className="h-3.5 w-3.5 text-indigo-400" />}
                                   </button>
                                 );
@@ -973,7 +976,7 @@ export default function Home() {
                           {isGraded && (
                             <div className="bg-gray-900/70 border border-white/5 rounded-xl p-3.5 text-[11px] leading-relaxed text-text-secondary mt-2">
                               <p className="mb-1 text-white font-semibold">Grounded Explanation:</p>
-                              <p>{q.explanation}</p>
+                              <RichText>{q.explanation}</RichText>
                               {q.outOfBounds && (
                                 <div className="mt-2 text-rose-400 bg-rose-950/15 border border-rose-950/50 rounded-lg p-2 flex items-start space-x-2">
                                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-rose-400" />
@@ -1173,13 +1176,15 @@ export default function Home() {
                           ) : (
                             // Non-editing Display
                             <div className="space-y-3">
-                              <h4 className="text-sm font-bold text-white leading-relaxed">{q.questionText}</h4>
+                              <RichText role="heading" aria-level={4} className="text-sm font-bold text-white leading-relaxed">
+                                {q.questionText}
+                              </RichText>
 
                               {q.options && (
                                 <ul className="list-disc pl-4 space-y-1">
                                   {q.options.map((opt, oIdx) => (
                                     <li key={oIdx} className={`text-xs ${q.correctAnswer === opt ? "text-emerald-400 font-medium" : "text-text-secondary"}`}>
-                                      {opt} {q.correctAnswer === opt && "(Answer)"}
+                                      <RichText inline>{opt}</RichText> {q.correctAnswer === opt && "(Answer)"}
                                     </li>
                                   ))}
                                 </ul>
@@ -1187,7 +1192,8 @@ export default function Home() {
 
                               {!q.options && (
                                 <p className="text-xs text-text-secondary">
-                                  <strong>Expected Answer:</strong> <span className="text-emerald-400">{q.correctAnswer}</span>
+                                  <strong>Expected Answer:</strong>{" "}
+                                  <RichText inline className="text-emerald-400">{q.correctAnswer}</RichText>
                                 </p>
                               )}
 

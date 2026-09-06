@@ -147,7 +147,7 @@ async def upload_document(
         extract_text = extract_text_from_docx(file_content)
 
     text_chunks = split_text_into_chunks(
-        extract_text, chunk_size=500, chunk_overlap=100
+        extract_text, chunk_size=1200, chunk_overlap=200
     )
     generated_questions = generate_questions_from_chunks(
         text_chunks, question_count=question_count
