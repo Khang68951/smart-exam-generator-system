@@ -10,11 +10,13 @@ venv/
 # Chặn database SQLite
 *.db
 backend/*.db
+backend/view_db.py
 
 # Chặn các file test dữ liệu 
 *.pdf
 *.docx
 *.txt
+!backend/requirements.txt
 
 # Frontend & documentation
 frontend/node_modules/
