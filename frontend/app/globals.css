@@ -41,3 +41,38 @@ html, body {
   color: var(--color-text-primary);
   font-family: var(--font-sans);
 }
+/* ---------------------------------------------------------------------------
+   Rendered document content (markdown tables + KaTeX formulas)
+   --------------------------------------------------------------------------- */
+.segs-markdown {
+  overflow-wrap: break-word;
+}
+
+/* Inline variant must not introduce block-level gaps inside headings/buttons */
+.segs-markdown--inline > * {
+  display: inline;
+}
+
+/* Formulas inherit the surrounding text colour instead of KaTeX's own default */
+.segs-markdown .katex {
+  color: inherit;
+  font-size: 1.05em;
+}
+
+/* Wide display formulas scroll on their own rather than stretching the panel */
+.segs-markdown .katex-display {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.25rem;
+}
+
+.segs-markdown--inline .katex-display {
+  display: inline-block;
+  margin: 0;
+}
+
+/* KaTeX renders an off-screen MathML copy; keep it out of text selection flow */
+.segs-markdown .katex-html {
+  white-space: normal;
+}

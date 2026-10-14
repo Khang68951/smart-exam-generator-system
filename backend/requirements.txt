@@ -1,0 +1,14 @@
+fastapi>=0.100.0
+uvicorn>=0.22.0
+sqlalchemy>=2.0.0
+pypdf>=3.0.0
+python-docx>=0.8.11
+pydantic>=2.0.0
+python-multipart>=0.0.6
+openai>=1.0.0
+python-dotenv>=1.0.0
+markitdown
+google-genai>=0.1.0
+
+
+
